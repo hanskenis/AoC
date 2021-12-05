@@ -4,20 +4,37 @@
 
 using namespace std;
 
+void draw(int* grid, Line line, int w) {
+    int x = line.start.x;
+    int y = line.start.y;
+    grid[x * w + y]++;
+    while (x != line.end.x || y != line.end.y) {
+        if (x < line.end.x)
+            x++;
+        else if (x > line.end.x)
+            x--;
+
+        if (y < line.end.y)
+            y++;
+        else if (y > line.end.y)
+            y--;
+        grid[x * w + y]++;
+    }
+}
+
 int dangerous_areas(vector<Line> lines, int width, int height) {
     int result{};
-    for (size_t x = 0; x < width; x++) {
-        for (size_t y = 0; y < height; y++) {
-            int hits{};
-            for (size_t l = 0; l < lines.size(); l++) {
-                if (lines[l].hit(x, y)) hits++;
-                if (hits > 1) {
-                    result++;
-                    break;
-                }
-            }
+    int grid[width * height]{};
+    for (size_t i = 0; i < lines.size(); i++) {
+        draw(grid, lines[i], width);
+    }
+
+    for (size_t i = 0; i < width; i++) {
+        for (size_t j = 0; j < height; j++) {
+            if (grid[i * width + j] > 1) result++;
         }
     }
+
     return result;
 }
 
