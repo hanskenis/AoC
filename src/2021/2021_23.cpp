@@ -3,16 +3,16 @@
 using namespace std;
 
 typedef pair<int, int> Location;
-enum AmphipodType { A,
+enum AmphipodType { NONE,
+                    A,
                     B,
                     C,
                     D };
 
 struct Amphipod {
-    Location location;
     AmphipodType type;
-    Amphipod(Location s, AmphipodType t) {
-        location = s;
+
+    Amphipod(AmphipodType t) {
         type = t;
     }
 
@@ -30,48 +30,62 @@ struct Amphipod {
             case D:
                 cout << 'D';
                 break;
+            case NONE:
+                cout << '.';
+                break;
         }
     }
 };
 
+struct Room {
+    vector<Amphipod> amphipods{};
+
+    void add(Amphipod a) {
+        amphipods.push_back(a);
+    }
+};
+
 struct Burrow {
-    vector<Amphipod> amphipods;
-    vector<Location> walls;
+    Amphipod hallway[11]{NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE, NONE};
 
-    Burrow(vector<Amphipod> pods, vector<Location> walls) {
-        this->amphipods = pods;
-        this->walls = walls;
-    }
+    Room rooms[4];
 
-    const Amphipod* pod_at(int x, int y) const {
-        for (auto&& p : amphipods) {
-            if (p.location.first == x && p.location.second == y) {
-                return &p;
-            }
+    Burrow(Room rooms[4]) {
+        for (size_t i = 0; i < 4; i++) {
+            this->rooms[i] = rooms[i];
         }
-        return NULL;
     }
+
     bool is_organized() const {
-        
+        return true;
+    }
+
+    bool operator==(const Burrow& other) const {
+        return hallway == other.hallway && rooms == other.rooms;
     }
 
     void display() const {
-        cout << endl;
-        for (size_t y = 0; y < 5; y++) {
-            for (size_t x = 0; x < 13; x++) {
-                if (find(walls.begin(), walls.end(), Location(x, y)) != walls.end())
-                    cout << "#";
-                else {
-                    auto p = pod_at(x, y);
-                    if (p) {
-                        p->display();
-                    } else {
-                        cout << '.';
-                    }
-                }
-            }
-            cout << endl;
+        cout << "#############" << endl;
+        cout << "#";
+        for (size_t i = 0; i < 11; i++) {
+            hallway[i].display();
         }
+        cout << "#" << endl;
+    }
+};
+
+// The specialized hash function for `unordered_map` keys
+struct hash_fn {
+    template <class T1, class T2>
+    std::size_t operator()(const Burrow& burrow) const {
+        std::size_t h = hash()(burrow.amphipods[0].location.first) ^ hash()(burrow.amphipods[0].location.second);
+
+        for (size_t i = 1; i < burrow.amphipods.size(); i++) {
+            h = h ^ hash()(burrow.amphipods[i].location.first);
+            h = h ^ hash()(burrow.amphipods[i].location.second);
+        }
+
+        return h;
     }
 };
 
@@ -90,36 +104,49 @@ AmphipodType to_type(const char c) {
     }
 }
 
-auto part1(Burrow burrow) {
+typedef pair<long, Burrow> QueueItem;
+
+auto dijkstra(Burrow start, Burrow goal) {
+    priority_queue<QueueItem, vector<QueueItem>, greater<QueueItem>> queue{};
+    queue.push(QueueItem(0, start));
+
+    unordered_map<Burrow, bool, hash_fn> visited{};
+
+    while (!queue.empty()) {
+        auto queue_item = queue.top();
+        queue.pop();
+        if (visited[queue_item.second]) continue;
+        if (queue_item.second == goal) {
+        };
+
+        visited[queue_item.second] = true;
+
+        // for (auto&& b : queue_item.generate_neighbours()) {
+        // }
+    }
+}
+
+auto part1(const Burrow& burrow) {
+    cout << "Is organized: " << burrow.is_organized() << endl;
     return 0;
 }
 
 int main() {
     string line;
     vector<string> input{};
-    for (size_t i = 0; i < 5; i++) {
-        getline(cin, line);
+    while (getline(cin, line)) {
         input.push_back(line);
     }
 
-    vector<Location> walls{};
-    vector<Amphipod> pods{};
-
-    for (size_t i = 0; i < input.size(); i++) {
-        for (size_t j = 0; j < input[i].size(); j++) {
-            if (input[i][j] == '#')
-                walls.push_back(Location(j, i));
-            else if (input[i][j] == '.')
-                continue;
-            else if (input[i][j] == ' ')
-                continue;
-            else {
-                pods.push_back(Amphipod(Location(j, i), to_type(input[i][j])));
-            }
-        }
+    Room rooms[4];
+    for (size_t i = 2; i < input.size(); i++) {
+        rooms[0].add(to_type(input[i][3]));
+        rooms[1].add(to_type(input[i][5]));
+        rooms[2].add(to_type(input[i][7]));
+        rooms[3].add(to_type(input[i][9]));
     }
 
-    auto burrow = Burrow(pods, walls);
+    auto burrow = Burrow(rooms);
     burrow.display();
 
     cout << "Part1: " << part1(burrow) << endl;
